@@ -22,24 +22,24 @@ export const isAndroid = Platform.OS === 'android';
 
 export const srcAllPlatformList = [
   {
-    description: 'local file landscape',
-    uri: localeVideo.broadchurch,
+    description: 'Big Buck Bunny',
+    uri: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
   },
   {
-    description: 'local file landscape cropped',
-    uri: localeVideo.broadchurch,
+    description: 'Live delay comparison custom manifest',
+    uri: "https://livesim.dashif.org/livesim/testpic_2s/Manifest.mpd",
     cropStart: 3000,
     cropEnd: 10000,
   },
   {
-    description: 'video with 90° rotation',
-    uri: 'https://bn-dev.fra1.digitaloceanspaces.com/km-tournament/uploads/rn_image_picker_lib_temp_2ee86a27_9312_4548_84af_7fd75d9ad4dd_ad8b20587a.mp4',
+    description: 'Live stream with availabilityTimeOffset',
+    uri: 'https://livesim.dashif.org/livesim/ato_10/testpic_2s/Manifest.mpd',
   },
   {
-    description: 'local file portrait',
-    uri: localeVideo.portrait,
+    description: 'Fast bitrate switch',
+    uri: "https://dash.akamaized.net/akamai/bbb_30fps/bbb_30fps.mpd",
     metadata: {
-      title: 'Test Title',
+      title: 'Fast bitrate switch',
       subtitle: 'Test Subtitle',
       artist: 'Test Artist',
       description: 'Test Description',
