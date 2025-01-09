@@ -150,81 +150,86 @@ const BasicExample = () => {
     });
   };
 
-  const onLoad = (data: OnLoadData) => {
+  const onLoad = useCallback((data: OnLoadData) => {
     setDuration(data.duration);
     onAudioTracks(data);
     onTextTracks(data);
     onVideoTracks(data);
-  };
+  },[]);
 
-  const onProgress = (data: OnProgressData) => {
+  const onProgress = useCallback((data: OnProgressData) => {
     setCurrentTime(data.currentTime);
-  };
+  },[]);
 
-  const onSeek = (data: OnSeekData) => {
+  const onSeek = useCallback((data: OnSeekData) => {
     setCurrentTime(data.currentTime);
     setIsSeeking(false);
-  };
+  },[]);
 
-  const onVideoLoadStart = () => {
+  const onVideoLoadStart = useCallback(() => {
     console.log('onVideoLoadStart');
     setIsLoading(true);
-  };
+  },[]);
 
-  const onTextTrackDataChanged = (data: OnTextTrackDataChangedData) => {
+  const onTextTrackDataChanged = useCallback((data: OnTextTrackDataChangedData) => {
     console.log(`Subtitles: ${JSON.stringify(data, null, 2)}`);
-  };
+  },[]);
 
-  const onAspectRatio = (data: OnVideoAspectRatioData) => {
+  const onAspectRatio = useCallback((data: OnVideoAspectRatioData) => {
     console.log('onAspectRadio called ' + JSON.stringify(data));
     setVideoSize({videoWidth: data.width, videoHeight: data.height});
-  };
+  },[]);
 
-  const onVideoBuffer = (param: OnBufferData) => {
+  const onVideoBuffer = useCallback((param: OnBufferData) => {
     console.log('onVideoBuffer');
     setIsLoading(param.isBuffering);
-  };
+  },[]);
 
-  const onReadyForDisplay = () => {
+  const onReadyForDisplay = useCallback(() => {
     console.log('onReadyForDisplay');
     setIsLoading(false);
-  };
+  },[]);
 
-  const onAudioBecomingNoisy = () => {
+  const onAudioBecomingNoisy = useCallback(() => {
     setPaused(true);
-  };
+  },[]);
 
-  const onAudioFocusChanged = (event: OnAudioFocusChangedData) => {
+  const onAudioFocusChanged = useCallback((event: OnAudioFocusChangedData) => {
     setPaused(!event.hasAudioFocus);
-  };
+  },[]);
 
-  const onError = (err: OnVideoErrorData) => {
+  const onError = useCallback((err: OnVideoErrorData) => {
     console.log(JSON.stringify(err));
     toast(true, 'error: ' + JSON.stringify(err));
-  };
+  },[]);
 
-  const onEnd = () => {
+  const onEnd = useCallback(() => {
     if (!repeat) {
       channelUp();
     }
-  };
+  },[]);
 
-  const onPlaybackRateChange = (data: OnPlaybackRateChangeData) => {
+  const onPlaybackRateChange = useCallback((data: OnPlaybackRateChangeData) => {
     console.log('onPlaybackRateChange', data);
-  };
+  },[]);
 
-  const onPlaybackStateChanged = (data: OnPlaybackStateChangedData) => {
+  const onPlaybackStateChanged = useCallback((data: OnPlaybackStateChangedData) => {
     console.log('onPlaybackStateChanged', data);
-  };
+  },[]);
 
-  const onVideoBandwidthUpdate = (data: OnBandwidthUpdateData) => {
+  const onVideoBandwidthUpdate = useCallback((data: OnBandwidthUpdateData) => {
     console.log('onVideoBandwidthUpdate', data);
-  };
+  },[]);
 
-  const onFullScreenExit = () => {
+  const onFullScreenExit = useCallback(() => {
     // iOS pauses video on exit from full screen
     Platform.OS === 'ios' && setPaused(true);
-  };
+  },[]);
+
+  const onPressVideo = useCallback(() => {
+    console.log("@@@@ onPressVideo");
+    videoRef.current?.resume();
+  }, []);
 
   const _renderLoader = showPoster ? () => <VideoLoader /> : undefined;
 
@@ -248,7 +253,7 @@ const BasicExample = () => {
       <StatusBar animated={true} backgroundColor="black" hidden={false} />
 
       {(srcList[srcListId] as AdditionalSourceInfo)?.noView ? null : (
-        <TouchableOpacity style={viewStyle}>
+        <TouchableOpacity style={viewStyle} onPress={onPressVideo}>
           <Video
             showNotificationControls={showNotificationControls}
             ref={videoRef}

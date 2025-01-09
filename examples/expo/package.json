@@ -26,7 +26,8 @@
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "react-native": "npm:react-native-tvos@0.76.2-0",
-    "react-native-web": "^0.19.13"
+    "react-native-web": "^0.19.13",
+    "react-native-video": "file:../../"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
