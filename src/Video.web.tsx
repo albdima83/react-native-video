@@ -115,6 +115,10 @@ const useMediaSession = (
 const videoStyle = {
   position: 'absolute',
   inset: 0,
+  top: 0,
+  left: 0,
+  right: 0,
+  bottom: 0,
   objectFit: 'contain',
   width: '100%',
   height: '100%',
@@ -159,27 +163,6 @@ const Video = forwardRef<VideoRef, ReactVideoProps>(
 
     useMediaSession(src?.metadata, htmlVideoRef, showNotificationControls);
 
-    const handleShakaError = useCallback(
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      //@ts-expect-error
-      (event) => {
-        const error = event.detail as shaka.util.Error;
-        console.log(event);
-        onError?.({error});
-      },
-      [onError],
-    );
-
-    const handleVideoHTMLError = useCallback(
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      //@ts-expect-error
-      (event) => {
-        const error = event;
-        onError?.({error});
-      },
-      [onError],
-    );
-
     const seek = useCallback(
       async (time: number, _tolerance?: number) => {
         if (isNaN(time)) {
@@ -189,10 +172,13 @@ const Video = forwardRef<VideoRef, ReactVideoProps>(
           console.warn('Video Component is not mounted');
           return;
         }
-        time = Math.max(0, Math.min(time, htmlVideoRef.current.duration));
-        htmlVideoRef.current.currentTime = time;
+        const seekTime = Math.max(
+          0,
+          Math.min(time, htmlVideoRef.current.duration),
+        );
+        htmlVideoRef.current.currentTime = seekTime;
         onSeek?.({
-          seekTime: time,
+          seekTime: seekTime,
           currentTime: htmlVideoRef.current.currentTime,
         });
       },
@@ -325,6 +311,150 @@ const Video = forwardRef<VideoRef, ReactVideoProps>(
       ],
     );
 
+    /**
+     * Internal Handles
+     */
+    const handleShakaError = useCallback(
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      //@ts-expect-error
+      (event) => {
+        const error = event.detail as shaka.util.Error;
+        console.log(event);
+        onError?.({error});
+      },
+      [onError],
+    );
+
+    const handleVideoHTMLError = useCallback(
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      //@ts-expect-error
+      (event) => {
+        const error = event;
+        onError?.({error});
+      },
+      [onError],
+    );
+
+    const handleCanPlay = useCallback(() => {
+      onBuffer?.({isBuffering: false});
+    }, [onBuffer]);
+
+    const handleWaiting = useCallback(() => {
+      onBuffer?.({isBuffering: true});
+    }, [onBuffer]);
+
+    const handleRateChange = useCallback(() => {
+      if (!htmlVideoRef.current) {
+        return;
+      }
+      onPlaybackRateChange?.({
+        playbackRate: htmlVideoRef.current?.playbackRate,
+      });
+    }, [onPlaybackRateChange]);
+
+    const handleDurationChange = useCallback(() => {
+      if (!htmlVideoRef.current) {
+        return;
+      }
+      onLoad?.({
+        currentTime: htmlVideoRef.current.currentTime,
+        duration: htmlVideoRef.current.duration,
+        videoTracks: [],
+        textTracks: [],
+        audioTracks: [],
+        naturalSize: {
+          width: htmlVideoRef.current.videoWidth,
+          height: htmlVideoRef.current.videoHeight,
+          orientation: 'landscape',
+        },
+      });
+    }, [onLoad]);
+
+    const handleTimeUpdate = useCallback(() => {
+      if (!htmlVideoRef.current) {
+        return;
+      }
+      onProgress?.({
+        currentTime: htmlVideoRef.current.currentTime,
+        playableDuration: htmlVideoRef.current.buffered.length
+          ? htmlVideoRef.current.buffered.end(
+              htmlVideoRef.current.buffered.length - 1,
+            )
+          : 0,
+        seekableDuration: 0,
+      });
+    }, [onProgress]);
+
+    const handleLoadedData = useCallback(() => {
+      if (!htmlVideoRef.current) {
+        return;
+      }
+      onReadyForDisplay?.();
+    }, [onReadyForDisplay]);
+
+    const handleLoadedMetadata = useCallback(() => {
+      if (!htmlVideoRef.current) {
+        return;
+      }
+      if (src?.startPosition) {
+        seek(src.startPosition / 1000);
+      }
+    }, [seek, src]);
+
+    const handlePlay = useCallback(() => {
+      if (!htmlVideoRef.current) {
+        return;
+      }
+      onPlaybackStateChanged?.({
+        isPlaying: true,
+        isSeeking: isSeeking.current,
+      });
+    }, [onPlaybackStateChanged]);
+
+    const handlePause = useCallback(() => {
+      if (!htmlVideoRef.current) {
+        return;
+      }
+      onPlaybackStateChanged?.({
+        isPlaying: true,
+        isSeeking: isSeeking.current,
+      });
+    }, [onPlaybackStateChanged]);
+
+    const handleSeeking = useCallback(() => {
+      isSeeking.current = true;
+    }, []);
+
+    const handleSeeked = useCallback(() => {
+      if (!htmlVideoRef.current) {
+        return;
+      }
+      if (isSeeking.current) {
+        isSeeking.current = false;
+        onSeek?.({
+          seekTime: htmlVideoRef.current.currentTime,
+          currentTime: htmlVideoRef.current.currentTime,
+        });
+      }
+    }, [onSeek]);
+
+    const handleVolumeChange = useCallback(() => {
+      if (!htmlVideoRef.current) {
+        return;
+      }
+      onVolumeChange?.({volume: htmlVideoRef.current.volume});
+    }, [onVolumeChange]);
+
+    const handleEnd = useCallback(() => {
+      if (!htmlVideoRef.current) {
+        return;
+      }
+      onEnd?.();
+    }, [onEnd]);
+
+    /**
+     * Effects
+     */
     useEffect(() => {
       const videoRef = htmlVideoRef.current; // Capture the current value of the ref
       shaka.polyfill.installAll();
@@ -452,84 +582,19 @@ const Video = forwardRef<VideoRef, ReactVideoProps>(
               : undefined
             : poster
         }
-        // onCanPlay={() => onBuffer?.({isBuffering: false})}
-        // onWaiting={() => onBuffer?.({isBuffering: true})}
-        onRateChange={() => {
-          if (!htmlVideoRef.current) {
-            return;
-          }
-          onPlaybackRateChange?.({
-            playbackRate: htmlVideoRef.current?.playbackRate,
-          });
-        }}
-        onDurationChange={() => {
-          if (!htmlVideoRef.current) {
-            return;
-          }
-          onLoad?.({
-            currentTime: htmlVideoRef.current.currentTime,
-            duration: htmlVideoRef.current.duration,
-            videoTracks: [],
-            textTracks: [],
-            audioTracks: [],
-            naturalSize: {
-              width: htmlVideoRef.current.videoWidth,
-              height: htmlVideoRef.current.videoHeight,
-              orientation: 'landscape',
-            },
-          });
-        }}
-        onTimeUpdate={() => {
-          if (!htmlVideoRef.current) {
-            return;
-          }
-          onProgress?.({
-            currentTime: htmlVideoRef.current.currentTime,
-            playableDuration: htmlVideoRef.current.buffered.length
-              ? htmlVideoRef.current.buffered.end(
-                  htmlVideoRef.current.buffered.length - 1,
-                )
-              : 0,
-            seekableDuration: 0,
-          });
-        }}
-        onLoadedData={() => onReadyForDisplay?.()}
-        onLoadedMetadata={() => {
-          if (src?.startPosition) {
-            seek(src.startPosition / 1000);
-          }
-        }}
-        onPlay={() =>
-          onPlaybackStateChanged?.({
-            isPlaying: true,
-            isSeeking: isSeeking.current,
-          })
-        }
-        onPause={() =>
-          onPlaybackStateChanged?.({
-            isPlaying: false,
-            isSeeking: isSeeking.current,
-          })
-        }
-        onSeeking={() => (isSeeking.current = true)}
-        onSeeked={() => {
-          // only trigger this if it's from UI seek.
-          // if it was triggered via ref.seek(), onSeek has already been called
-          if (isSeeking.current) {
-            isSeeking.current = false;
-            onSeek?.({
-              seekTime: htmlVideoRef.current!.currentTime,
-              currentTime: htmlVideoRef.current!.currentTime,
-            });
-          }
-        }}
-        onVolumeChange={() => {
-          if (!htmlVideoRef.current) {
-            return;
-          }
-          onVolumeChange?.({volume: htmlVideoRef.current.volume});
-        }}
-        onEnded={onEnd}
+        onCanPlay={handleCanPlay}
+        onWaiting={handleWaiting}
+        onRateChange={handleRateChange}
+        onDurationChange={handleDurationChange}
+        onTimeUpdate={handleTimeUpdate}
+        onLoadedData={handleLoadedData}
+        onLoadedMetadata={handleLoadedMetadata}
+        onPlay={handlePlay}
+        onPause={handlePause}
+        onSeeking={handleSeeking}
+        onSeeked={handleSeeked}
+        onVolumeChange={handleVolumeChange}
+        onEnded={handleEnd}
         style={videoStyle}
       />
     );
